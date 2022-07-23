@@ -1,5 +1,5 @@
-drop table if exists etl.etl_log;
-create table etl.etl_log (
+drop table if exists shrx.etl_log;
+create table shrx.etl_log (
 	 log_id            serial
 	,job_name          text not null
 	,file_name         text
@@ -13,6 +13,5 @@ create table etl.etl_log (
 	,end_date          timestamp null 
 	,create_date       timestamp not null default now()
 	,update_date       timestamp not null default now()
-	
 );
-ALTER SEQUENCE etl.etl_log_log_id_seq RESTART WITH 10000;
+ALTER SEQUENCE shrx.etl_log_log_id_seq RESTART WITH 10000;

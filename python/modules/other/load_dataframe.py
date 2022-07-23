@@ -1,11 +1,14 @@
 import pandas as pd
 
 def load_dataframe(etl_config):
+	''' sample config for module
+	{"df_name"=null,"sep"=null,"dtype"=null,"encoding"=null}
+	'''
 
 	#standard variables
 	logger       = etl_config['logger']
 	env          = etl_config['env']
-	datastore      = etl_config['datastore']
+	partner      = etl_config['partner']
 	file_path    = etl_config['file_path']
 	logger.info('you are running load_dataframe()')
 
@@ -23,3 +26,4 @@ def load_dataframe(etl_config):
 	df = pd.read_csv(filepath_or_buffer=file_path,sep=sep,dtype=dtype,keep_default_na=False,encoding=encoding)
 	etl_config[dfName]=df
 	logger.info('...file loaded to generic dataframe')
+

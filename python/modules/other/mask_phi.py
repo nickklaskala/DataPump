@@ -226,10 +226,49 @@ class Alt:
 #main module
 def mask_phi(etl_config):
 
+	'''{
+		 "seed":null
+		,"salt":null
+		,"first_name":null
+		,"last_name":null
+		,"last_first":null
+		,"address":null
+		,"street":null
+		,"city":null
+		,"state":null
+		,"zipcode":null
+		,"gender":null
+		,"phone":null
+		,"num":null
+		,"num_01_digit":null
+		,"num_02_digit":null
+		,"num_03_digit":null
+		,"num_04_digit":null
+		,"num_05_digit":null
+		,"num_06_digit":null
+		,"num_07_digit":null
+		,"num_08_digit":null
+		,"num_09_digit":null
+		,"num_10_digit":null
+		,"num_11_digit":null
+		,"num_12_digit":null
+		,"num_13_digit":null
+		,"num_14_digit":null
+		,"num_15_digit":null
+		,"num_16_digit":null
+		,"num_17_digit":null
+		,"num_18_digit":null
+		,"num_19_digit":null
+		,"num_20_digit":null
+		,"dob":null
+		,"dob_format":null
+	}'''
+
+
 	#standard variables
 	logger    = etl_config['logger']
 	env       = etl_config['env']
-	datastore   = etl_config['datastore']
+	partner   = etl_config['partner']
 	file_name = etl_config['file_name']
 	logger.info('you are running mask_phi()')
 
@@ -237,12 +276,12 @@ def mask_phi(etl_config):
 	config    = etl_config['config_ext'].get('mask_phi_config',{})
 
 	#build dataframe
-	df_name   = config.get('df_name','df')
-	df        = etl_config.get(df_name)
-	return_type='df'
+	df_name     = config.get('df_name','df')
+	df          = etl_config.get(df_name)
+	return_type ='df'
 
 	delimiter=None
-	if not df:
+	if df is None:
 		return_type='stream'
 		file_stream_name = config.get('file_stream_name','file_stream')
 		file_stream      = etl_config.get(file_stream_name)
@@ -266,7 +305,7 @@ def mask_phi(etl_config):
 	cf_gender       =        config.get('gender'      ) #meta should never need more than one and it doesnt need to be masked
 	cf_phone        = toList(config.get('phone'       ))
 	cf_dob          = toList(config.get('dob'         ))
-	cf_dob_format   =        config.get('df'          ) #meta should never need more than one
+	cf_dob_format   =        config.get('dob_format'  ) #meta should never need more than one
 	cf_num          = toList(config.get('num'         ))
 	cf_alpha        = toList(config.get('alpha'       ))
 	cf_alphanum     = toList(config.get('alphanum'    ))
