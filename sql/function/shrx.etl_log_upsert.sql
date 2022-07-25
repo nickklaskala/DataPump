@@ -1,7 +1,7 @@
 drop function if exists shrx.etl_log_upsert;
 create or replace function shrx.etl_log_upsert (
 	 v_log_Id             int default null
-	,v_job_name           text default null
+	,v_job_id             int default null
 	,v_file_name          text default null
 	,v_status             text default null
 	,v_log_level          text default null
@@ -21,7 +21,7 @@ begin
 
 		update shrx.etl_log set
 			 log_Id           =coalesce(v_log_Id            ,etl_log.log_Id            )
-			,job_name         =coalesce(v_job_name          ,etl_log.job_name          )
+			,job_id           =coalesce(v_job_id            ,etl_log.job_id            )
 			,file_name        =coalesce(v_file_name         ,etl_log.file_name         )
 			,status           =coalesce(v_status            ,etl_log.status            )
 			,log_level        =coalesce(v_log_level         ,etl_log.log_level         )
@@ -34,9 +34,9 @@ begin
 
 	else
 
-		insert into shrx.etl_log (job_name,file_name,status,log_level,log_file,file_row_count,process_row_count,error_row_count,end_date)
+		insert into shrx.etl_log (job_id,file_name,status,log_level,log_file,file_row_count,process_row_count,error_row_count,end_date)
 		values
-			(v_job_name,v_file_name,v_status,v_log_level,v_log_file,v_file_row_count,v_process_row_count,v_error_row_count,v_end_date)
+			(v_job_id,v_file_name,v_status,v_log_level,v_log_file,v_file_row_count,v_process_row_count,v_error_row_count,v_end_date)
 		RETURNING log_id into v_log_id;
 
 	end if;

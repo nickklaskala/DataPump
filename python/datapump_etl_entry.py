@@ -45,32 +45,33 @@ import modules
 def inbound_single_file(job_name,debug=False):
 
 	#Environment
-	env                          = os.environ['ENV']
-	processing_dir               = os.environ['PROCESSINGDIR']
-	datapump_dir              = processing_dir+'/datapump/'+env
-	maestro                      = datapump_utils.Maestro(env)
+	env                           = os.environ['ENV']
+	processing_dir                = os.environ['PROCESSINGDIR']
+	datapump_dir                  = processing_dir+'/datapump/'+env
+	maestro                       = datapump_utils.Maestro(env)
 
 	#load configurations for etl job
-	etl_config                   = maestro.lookup_etl_config(job_name=job_name)
+	etl_config                    = maestro.lookup_etl_config(job_name=job_name)
+	job_id                        = etl_config['job_id']
 
 	#get external file
-	external_file_source_path    = (glob.glob(etl_config['source_loc']+'/'+etl_config['file_pattern']))[0]
-	external_file_name           = os.path.basename(external_file_source_path)
-	external_file_archive_path   = etl_config['source_loc']+'/archive/'+external_file_name
+	external_file_source_path     = (glob.glob(etl_config['source_loc']+'/'+etl_config['file_pattern']))[0]
+	external_file_name            = os.path.basename(external_file_source_path)
+	external_file_archive_path    = etl_config['source_loc']+'/archive/'+external_file_name
 
 	#generate unique log number for this run and setup logger
-	me                           = maestro.is_single_instance(flavor=etl_config['job_id'])#immediately kill me  if another one is running with same job_name.
-	maestro.etl_log_reset(job_name=job_name)#reset incomplete runs
-	log_id                       = maestro.etl_log_upsert(job_name=job_name,file_name=external_file_name,status='running')
-	logger                       = datapump_utils.MyLogger(log_dir=datapump_dir+'/logging',base_name=job_name,log_id=log_id,maestro=maestro)
+	me                            = maestro.is_single_instance(flavor=job_id)#immediately kill me  if another one is running with same job_id.
+	maestro.etl_log_reset(job_id=job_id)#reset incomplete runs
+	log_id                        = maestro.etl_log_upsert(job_id=job_id,file_name=external_file_name,status='running')
+	logger                        = datapump_utils.MyLogger(log_dir=datapump_dir+'/logging',base_name=job_name,log_id=log_id,maestro=maestro)
 
 	#get internal locations
-	internal_staged_path         = datapump_dir+'/jobData/'+job_name+'/staged/'
-	internal_processed_path      = datapump_dir+'/jobData/'+job_name+'/processed/'
-	internal_errored_path        = datapump_dir+'/jobData/'+job_name+'/errored/'
-	internal_file_staged_path    = internal_staged_path+external_file_name
-	internal_file_processed_path = internal_processed_path+external_file_name
-	internal_file_errored_path   = internal_errored_path+external_file_name
+	internal_staged_path          = datapump_dir+'/jobData/'+job_name+'/staged/'
+	internal_processed_path       = datapump_dir+'/jobData/'+job_name+'/processed/'
+	internal_errored_path         = datapump_dir+'/jobData/'+job_name+'/errored/'
+	internal_file_staged_path     = internal_staged_path+external_file_name
+	internal_file_processed_path  = internal_processed_path+external_file_name
+	internal_file_errored_path    = internal_errored_path+external_file_name
 
 	#maintain internal directory structure
 	os.makedirs(internal_staged_path, exist_ok=True)
@@ -83,14 +84,14 @@ def inbound_single_file(job_name,debug=False):
 		shutil.move(external_file_source_path,external_file_archive_path)
 
 	#pass to shelf
-	etl_config['file_name']         = external_file_name
-	etl_config['file_path']         = internal_file_staged_path
-	etl_config['logger']            = logger
-	etl_config['env']               = env
-	etl_config['processing_dir']    = processing_dir
-	etl_config['datapump_dir']   = datapump_dir
-	etl_config['maestro']           = maestro
-	etl_config['datapump_utils'] = datapump_utils
+	etl_config['file_name']       = external_file_name
+	etl_config['file_path']       = internal_file_staged_path
+	etl_config['logger']          = logger
+	etl_config['env']             = env
+	etl_config['processing_dir']  = processing_dir
+	etl_config['datapump_dir']    = datapump_dir
+	etl_config['maestro']         = maestro
+	etl_config['datapump_utils']  = datapump_utils
 
 	#process
 	for step in etl_config['processes'].split(','):
@@ -113,33 +114,34 @@ def inbound_single_file(job_name,debug=False):
 def outbound_single_file(job_name,debug=False):
 
 	#Environment
-	env                          = os.environ['ENV']
-	processing_dir               = os.environ['PROCESSINGDIR']
-	datapump_dir              = processing_dir+'/datapump/'+env
-	maestro                      = datapump_utils.Maestro(env)
+	env                           = os.environ['ENV']
+	processing_dir                = os.environ['PROCESSINGDIR']
+	datapump_dir                  = processing_dir+'/datapump/'+env
+	maestro                       = datapump_utils.Maestro(env)
 
 	#load configurations for etl job
-	etl_config                   = maestro.lookup_etl_config(job_name=job_name)
+	etl_config                    = maestro.lookup_etl_config(job_name=job_name)
+	job_id                        = etl_config['job_id']
 
 	#get internal file
-	date_format                  = datetime.now().strftime(etl_config['date_pattern'])
-	internal_file_name           = etl_config['file_pattern'].format(date_format=date_format)
-	external_dest_path           = etl_config['destination_loc']
-	external_file_dest_path      = external_dest_path+'/'+internal_file_name
+	date_format                   = datetime.now().strftime(etl_config['date_pattern'])
+	internal_file_name            = etl_config['file_pattern'].format(date_format=date_format)
+	external_dest_path            = etl_config['destination_loc']
+	external_file_dest_path       = external_dest_path+'/'+internal_file_name
 
 	#generate unique log number for this run and setup logger
-	me                           = maestro.is_single_instance(flavor=etl_config['job_id'])#immediately kill me  if another one is running with same job_name.
-	maestro.etl_log_reset(job_name=job_name)
-	log_id                       = maestro.etl_log_init(job_name=job_name,file_name=internal_file_name,status='running')
-	logger                       = datapump_utils.MyLogger(log_dir=datapump_dir+'/logging',base_name=job_name,log_id=log_id,maestro=maestro)
+	me                            = maestro.is_single_instance(flavor=job_id)#immediately kill me  if another one is running with same job_name.
+	maestro.etl_log_reset(job_id=job_id)
+	log_id                        = maestro.etl_log_init(job_id=job_id,file_name=internal_file_name,status='running')
+	logger                        = datapump_utils.MyLogger(log_dir=datapump_dir+'/logging',base_name=job_name,log_id=log_id,maestro=maestro)
 
 	#get internal locations
-	internal_staged_path         = datapump_dir+'/jobData/'+job_name+'/staged/'
-	internal_processed_path      = datapump_dir+'/jobData/'+job_name+'/processed/'
-	internal_errored_path        = datapump_dir+'/jobData/'+job_name+'/errored/'
-	internal_file_staged_path    = internal_staged_path+internal_file_name
-	internal_file_processed_path = internal_processed_path+internal_file_name
-	internal_file_errored_path   = internal_errored_path+internal_file_name
+	internal_staged_path          = datapump_dir+'/jobData/'+job_name+'/staged/'
+	internal_processed_path       = datapump_dir+'/jobData/'+job_name+'/processed/'
+	internal_errored_path         = datapump_dir+'/jobData/'+job_name+'/errored/'
+	internal_file_staged_path     = internal_staged_path+internal_file_name
+	internal_file_processed_path  = internal_processed_path+internal_file_name
+	internal_file_errored_path    = internal_errored_path+internal_file_name
 
 	#maintain internal directory structure
 	os.makedirs(internal_staged_path, exist_ok=True)
@@ -147,14 +149,14 @@ def outbound_single_file(job_name,debug=False):
 	os.makedirs(internal_errored_path, exist_ok=True)
 
 	#pass to shelf
-	etl_config['file_name']         = internal_file_name
-	etl_config['file_path']         = internal_file_staged_path
-	etl_config['logger']            = logger
-	etl_config['env']               = env
-	etl_config['processing_dir']    = processing_dir
-	etl_config['datapump_dir']   = datapump_dir
-	etl_config['maestro']           = maestro
-	etl_config['datapump_utils'] = datapump_utils
+	etl_config['file_name']       = internal_file_name
+	etl_config['file_path']       = internal_file_staged_path
+	etl_config['logger']          = logger
+	etl_config['env']             = env
+	etl_config['processing_dir']  = processing_dir
+	etl_config['datapump_dir']    = datapump_dir
+	etl_config['maestro']         = maestro
+	etl_config['datapump_utils']  = datapump_utils
 
 	#process
 	for step in etl_config['processes'].split(','):
@@ -179,27 +181,28 @@ def outbound_single_file(job_name,debug=False):
 def maintenance(job_name,debug=False):
 
 	#Environment
-	env                          = os.environ['ENV']
-	processing_dir               = os.environ['PROCESSINGDIR']
-	datapump_dir              = processing_dir+'/datapump/'+env
-	maestro                      = datapump_utils.Maestro(env)
+	env                           = os.environ['ENV']
+	processing_dir                = os.environ['PROCESSINGDIR']
+	datapump_dir                  = processing_dir+'/datapump/'+env
+	maestro                       = datapump_utils.Maestro(env)
 
 	#load configurations for etl job
-	etl_config                   = maestro.lookup_etl_config(job_name=job_name)
+	etl_config                    = maestro.lookup_etl_config(job_name=job_name)
+	job_id                        = etl_config['job_id']
 
 	#generate unique log number for this run and setup logger
-	me                           = maestro.is_single_instance(flavor=etl_config['job_id'])#immediately kill me  if another one is running with same job_name.
-	maestro.etl_log_reset(job_name=job_name)
-	log_id                       = maestro.etl_log_init(job_name=job_name,file_name=None,status='running')
-	logger                       = datapump_utils.MyLogger(log_dir=datapump_dir+'/logging',base_name=job_name,log_id=log_id,maestro=maestro)
+	me                            = maestro.is_single_instance(flavor=etl_config['job_id'])#immediately kill me  if another one is running with same job_name.
+	maestro.etl_log_reset(job_id=job_id)
+	log_id                        = maestro.etl_log_init(job_id=job_id,file_name=None,status='running')
+	logger                        = datapump_utils.MyLogger(log_dir=datapump_dir+'/logging',base_name=job_name,log_id=log_id,maestro=maestro)
 
 	#pass to shelf
-	etl_config['logger']            = logger
-	etl_config['env']               = env
-	etl_config['processing_dir']    = processing_dir
-	etl_config['datapump_dir']   = datapump_dir
-	etl_config['maestro']           = maestro
-	etl_config['datapump_utils'] = datapump_utils
+	etl_config['logger']          = logger
+	etl_config['env']             = env
+	etl_config['processing_dir']  = processing_dir
+	etl_config['datapump_dir']    = datapump_dir
+	etl_config['maestro']         = maestro
+	etl_config['datapump_utils']  = datapump_utils
 
 	#process
 	for step in etl_config['processes'].split(','):
@@ -234,7 +237,9 @@ if __name__=='__main__':
 	#launch etl
 	if etl_config['entrypoint']=='inbound_single_file':
 		inbound_single_file(job_name=job_name,debug=debug)
+
 	if etl_config['entrypoint']=='outbound_single_file':
 		outbound_single_file(job_name=job_name,debug=debug)
+
 	if etl_config['entrypoint']=='maintenance':
 		maintenance(job_name=job_name,debug=debug)

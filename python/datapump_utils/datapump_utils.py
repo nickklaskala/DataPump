@@ -28,10 +28,10 @@ class Maestro:
 		result['destination_loc']=(result['destination_loc'] or '').replace('{env}',self.env)
 		return result
 
-	def etl_log_upsert(self,log_id='NULL',job_name=None,file_name=None,status=None,log_level=None,log_file=None,file_row_count=None,process_row_count=None,error_row_count=None,end_date=None):
+	def etl_log_upsert(self,log_id='NULL',job_id=None,file_name=None,status=None,log_level=None,log_file=None,file_row_count=None,process_row_count=None,error_row_count=None,end_date=None):
 		sql="v_log_id=>{}".format(log_id)
-		if job_name:
-			sql+=",v_job_name=>'{}'".format(job_name)
+		if job_id:
+			sql+=",v_job_id=>'{}'".format(job_id)
 		if file_name:
 			sql+=",v_file_name=>'{}'".format(file_name)
 		if status:
@@ -52,8 +52,8 @@ class Maestro:
 		result=self.db_etl.execute(sql=sql,return_dict=True)
 		return str(result['etl_log_upsert'])
 
-	def etl_log_reset(self,job_name):
-		sql="update etl.etl_log set status='reset' where job_name='{0}' and status='running'".format(job_name)
+	def etl_log_reset(self,job_id):
+		sql="update etl.etl_log set status='reset' where job_id='{0}' and status='running'".format(job_id)
 		result=self.db_etl.execute(sql=sql,return_dict=True)
 		return result
 
