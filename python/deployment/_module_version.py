@@ -12,7 +12,7 @@ sql = open(str(Path(__file__).parent.parent) + "/modules/msot/sql/test.sql", "r"
 result_list={}
 
 for datastore,info in sfu.datastores[env].items():
-	if info.get('is_partner')==False:
+	if info.get('is_partner')!=True:
 		continue
 
 	db=sfu.Database.easy_connect(env=env,datastore=datastore)

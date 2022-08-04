@@ -1,5 +1,6 @@
 import io
 
+#standard module to load file into in memory object
 def load_file_stream(etl_config):
 	'''  sample module config
 	{"file_stream_name":null,"encoding":null}

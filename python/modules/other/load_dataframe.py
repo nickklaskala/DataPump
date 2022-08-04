@@ -1,5 +1,6 @@
 import pandas as pd
 
+#standard module to simply load file data to unadulterated dataframe(all dtype objects)
 def load_dataframe(etl_config):
 	''' sample config for module
 	{"df_name"=null,"sep"=null,"dtype"=null,"encoding"=null}
@@ -24,6 +25,7 @@ def load_dataframe(etl_config):
 	#main
 	logger.info('...loading file '+file_path)
 	df = pd.read_csv(filepath_or_buffer=file_path,sep=sep,dtype=dtype,keep_default_na=False,encoding=encoding)
+	df = df.applymap(lambda x: x.strip() if isinstance(x, object) else x)
 	etl_config[dfName]=df
 	logger.info('...file loaded to generic dataframe')
 

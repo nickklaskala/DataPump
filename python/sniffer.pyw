@@ -37,9 +37,12 @@ while True:
 			thread.start()
 
 
+
+
 	#get scheduled jobs to process
 	db.execute('select etl.etl_forecast_build()')
 	jobs = db.execute('select * from etl.etl_forecast as a left join etl.etl_job as b on b.job_id=a.job_id where a.is_started=false and start_datetime<now()',return_dict=True)
+	jobs = [jobs] if isinstance(jobs, dict) else jobs
 
 	#launch job
 	for job in jobs:

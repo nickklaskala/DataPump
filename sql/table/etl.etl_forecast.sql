@@ -1,4 +1,4 @@
-create table if not exists shrx.etl_forecast 
+create table if not exists etl.etl_forecast 
 (
 	 etl_forecast_id serial
 	,job_id bigint 

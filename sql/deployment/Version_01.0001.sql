@@ -1,5 +1,5 @@
 
-select shrx.etl_job_upsert(
+select etl.etl_job_upsert(
  v_job_name        =>'MSOT_WALMART'
 ,v_is_active       =>'t'
 ,v_partner         =>'WALMART'
@@ -15,7 +15,7 @@ select shrx.etl_job_upsert(
 );
 
 
-select shrx.etl_job_upsert(
+select etl.etl_job_upsert(
  v_job_name        =>'APPOINTMENT_WALMART'
 ,v_is_active       =>'t'
 ,v_partner         =>'WALMART'
