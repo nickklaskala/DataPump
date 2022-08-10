@@ -16,6 +16,7 @@ create TABLE etl.etl_job (
 	,config_ext       json          null
 	,create_date      timestamp not null default now()
 	,update_date      timestamp not null default now()
+	,PRIMARY KEY (job_id)
 );
 
 
