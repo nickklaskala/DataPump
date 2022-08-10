@@ -8,8 +8,6 @@ def load_dataframe(etl_config):
 
 	#standard variables
 	logger       = etl_config['logger']
-	env          = etl_config['env']
-	partner      = etl_config['partner']
 	file_path    = etl_config['file_path']
 	logger.info('you are running load_dataframe()')
 

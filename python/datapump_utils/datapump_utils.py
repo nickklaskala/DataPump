@@ -23,7 +23,7 @@ class Maestro:
 
 	def lookup_etl_config(self,job_name):
 		sql="select * from etl.etl_job where job_name='{0}'".format(job_name)
-		result=self.db_etl.execute(sql=sql,return_dict=True)
+		result=self.db.execute(sql=sql,return_dict=True)
 		result['source_loc']=(result['source_loc'] or '').replace('{env}',self.env)
 		result['destination_loc']=(result['destination_loc'] or '').replace('{env}',self.env)
 		return result
@@ -49,12 +49,12 @@ class Maestro:
 		if end_date:
 			sql+=",v_end_date=>now()::timestamp"
 		sql="select etl.etl_log_upsert({0})".format(sql)
-		result=self.db_etl.execute(sql=sql,return_dict=True)
+		result=self.db.execute(sql=sql,return_dict=True)
 		return str(result['etl_log_upsert'])
 
 	def etl_log_reset(self,job_id):
 		sql="update etl.etl_log set status='reset' where job_id='{0}' and status='running'".format(job_id)
-		result=self.db_etl.execute(sql=sql,return_dict=True)
+		result=self.db.execute(sql=sql,return_dict=True)
 		return result
 
 	@staticmethod
@@ -266,7 +266,7 @@ datastores= {
 	'dev':{
 		 'DATAWAREHOUSE'  : {'engine':'postgres', 'host': 'linxdbddwh'     , 'port': '5453', 'database': 'enterpriseDWdev' }
 		,'OLTPSYSTEM'     : {'engine':'postgres', 'host': 'linxdbdoltp'    , 'port': '5453', 'database': 'deoltp'          }
-		,'ETLSTAGING'     : {'engine':'postgres', 'host': 'linxdbdetl'     , 'port': '5453', 'database': 'etl_dev'         }
+		,'ETLSTAGING'     : {'engine':'postgres', 'host': 'localhost'      , 'port': '5432', 'database': 'postgres'         }
 		,'CVS'            : {'engine':'postgres', 'host': 'linxdbdpatdev'  , 'port': '5453', 'database': 'dev_cvs'         }
 		,'WALLGREENS'     : {'engine':'postgres', 'host': 'linxdbdpatdev'  , 'port': '5453', 'database': 'wallgreens_test' }
 	}
