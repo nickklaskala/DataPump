@@ -9,10 +9,12 @@ select etl.etl_job_upsert(
 ,v_destination_loc =>null
 ,v_file_pattern    =>'Walmart_MSOT_Daily_20220601.csv'
 ,v_entrypoint      =>'inbound_single_file'
-,v_processes       =>'load_dataframe,appt_match,msot'
+,v_processes       =>'load_dataframe,appointments'
 ,v_notes           =>null
-,v_config_ext      =>'{"load_dataframe_config":{"dfName":"NicksDataFrame"}}'
+,v_config_ext      =>'{"load_dataframe_config":{"df_name":"NicksDataFrame"}}'
 );
+
+
 
 
 select etl.etl_job_upsert(

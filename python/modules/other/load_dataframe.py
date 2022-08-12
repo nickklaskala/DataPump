@@ -15,7 +15,7 @@ def load_dataframe(etl_config):
 	config    = etl_config['config_ext'].get('load_dataframe_config',{})
 
 	#dataframe specific variables
-	dfName            =config.get('df_name','df')
+	df_name           =config.get('df_name','df')
 	sep               =config.get('sep','|')
 	dtype             =config.get('dtype','object')
 	encoding          =config.get('encoding','utf8')
@@ -24,6 +24,6 @@ def load_dataframe(etl_config):
 	logger.info('...loading file '+file_path)
 	df = pd.read_csv(filepath_or_buffer=file_path,sep=sep,dtype=dtype,keep_default_na=False,encoding=encoding)
 	df = df.applymap(lambda x: x.strip() if isinstance(x, object) else x)
-	etl_config[dfName]=df
+	etl_config[df_name]=df
 	logger.info('...file loaded to generic dataframe')
 

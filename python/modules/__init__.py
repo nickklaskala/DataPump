@@ -7,17 +7,11 @@ except:
 
 #appt_match
 try:
-	from .appt_match.appt_match import appt_match
+	from .appointments.appointments import appointments
 except:
 	print('failed to load appt_match')
 	pass
 
-#fill
-try:
-	from .fill.fill import fill
-except:
-	print('failed to load fill')
-	pass
 
 #other modules
 try:
