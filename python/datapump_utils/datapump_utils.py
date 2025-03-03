@@ -1,9 +1,6 @@
-#standard library
 import os
 import logging
 from datetime import datetime
-
-#3rd Party
 import psycopg2
 import psycopg2.extras
 import sqlalchemy
@@ -12,11 +9,11 @@ class Maestro:
 	"""class that stores a connection to the etl database and performs special etl actions
 
 	Attributes:
-		db the common db location for storing information about the etl job
+		db_etl the common db location for storing information about the etl job
 
 	Actions
 		lookup_etl_config:takes the job_name and self attribute environment and retrieves all information about the job to run from etl
-		etl_log_init:takes job_name, file_name, and status and Creates a log intry in etl.etl_log, and returns a log_id which is associated to this execution of the etl/job
+		etl_log_upsert:takes job_name, file_name, and status and Creates a log intry in etl.etl_log, and returns a log_id which is associated to this execution of the etl/job
 		etl_log_update:updates the before mentioned log record associated to the run with meta about the run (rows,status,log level,start and end times)
 	"""
 
@@ -26,18 +23,17 @@ class Maestro:
 
 	def lookup_etl_config(self,job_name):
 		sql="select * from etl.etl_job where job_name='{0}'".format(job_name)
-		result=self.db.execute(sql=sql,return_dict=True)
+		result=self.db.execute(sql=sql,return_dict=True)[0]
 		result['source_loc']=(result['source_loc'] or '').replace('{env}',self.env)
 		result['destination_loc']=(result['destination_loc'] or '').replace('{env}',self.env)
 		return result
 
-	def etl_log_init(self,job_name,file_name,status):
-		sql="select etl.etl_log_init('{0}','{1}','{2}')".format(job_name,file_name,status)
-		result=self.db.execute(sql=sql,return_dict=True)
-		return result['etl_log_init']
-
-	def etl_log_update(self,log_id,status=None,log_level=None,log_file=None,file_row_count=None,process_row_count=None,error_row_count=None,end_date=None):
-		sql="v_log_id=>'{}'".format(log_id)
+	def etl_log_upsert(self,log_id='NULL',job_id=None,file_name=None,status=None,log_level=None,log_file=None,file_row_count=None,process_row_count=None,error_row_count=None,end_date=None):
+		sql="v_log_id=>{}".format(log_id)
+		if job_id:
+			sql+=",v_job_id=>'{}'".format(job_id)
+		if file_name:
+			sql+=",v_file_name=>'{}'".format(file_name)
 		if status:
 			sql+=",v_status=>'{}'".format(status)#running/complete/error/reset
 		if log_level:
@@ -52,11 +48,12 @@ class Maestro:
 			sql+=",v_error_row_count=>'{}'".format(error_row_count)
 		if end_date:
 			sql+=",v_end_date=>now()::timestamp"
-		sql="select etl.etl_log_update({0})".format(sql)
-		self.db.execute(sql=sql,return_dict=True)
+		sql="select etl.etl_log_upsert({0})".format(sql)
+		result=self.db.execute(sql=sql,return_dict=True)[0]
+		return str(result['etl_log_upsert'])
 
-	def etl_log_reset(self,job_name):
-		sql="update etl.etl_log set status='reset' where job_name='{0}' and status='running'".format(job_name)
+	def etl_log_reset(self,job_id):
+		sql="update etl.etl_log set status='reset' where job_id='{0}' and status='running'".format(job_id)
 		result=self.db.execute(sql=sql,return_dict=True)
 		return result
 
@@ -64,13 +61,15 @@ class Maestro:
 	def is_single_instance(flavor):
 		# this will throw an error if same port is currently in use.  We can control concurrency by initializing this with each job run if that job should not be ran in parrallel
 		# this essentially binds a job to a port and if the port is already bound it will throw an error
+		# assumptions port 60000-65000 not in use by other programs
+		# can use any method we want if this becomes a problem. sockets is a standard approach.  as long as this function fails if concurrent
 		import socket
 		instance = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		port=flavor+60000
 		try:
 			instance.bind(('localhost', port))
 		except:
-			raise Exception('job_id '+str(flavor)+' already running and does not allow concurrency.  Will try again on next loop')
+			raise Exception('job_id '+str(flavor)+' already running and does not allow concurrency.  Will try again on next loop/or next scheduled time')
 		return instance
 
 
@@ -144,10 +143,12 @@ class Datastore:
 				try:
 					result=self.cursor_dict.fetchall()
 					try:
+						# print(result)
 						result=[dict(row) for row in result] #if RealDictRow is returned try formatting it
 					except:
 						pass
-					return result[0] if len(result)==1 else result # should this be consistent across all return types?
+					# return result[0] if len(result)==1 else result # should this be consistent across all return types?
+					return result # should this be consistent across all return types?
 				except:
 					pass
 			else:
@@ -201,7 +202,7 @@ class MyLogger:
 		self.log_warning = logging.getLogger('log_warning'+str(log_id))
 		self.log_archive = logging.getLogger('log_archive'+str(log_id))
 
-		maestro.etl_log_update(log_id=log_id,log_file=path_archive)
+		maestro.etl_log_upsert(log_id=log_id,log_file=path_archive)
 
 	def setup_logger(self, name, path, log_id, stream=False,mode='w'):
 		log = logging.getLogger(name)
@@ -260,34 +261,51 @@ class MyLogger:
 		new_level=levels.get(level)
 		if new_level>current_level:
 			self.highest_seen_level=level
-			self.maestro.etl_log_update(self.log_id,log_level=level)
+			self.maestro.etl_log_upsert(self.log_id,log_level=level)
 
-
-
-#database/envieonments are never consistant so organizing by datastore allows you to always just pass the environment+the datastore name to get the connection info you need
-#example   mydb=Datastore.easy_connect(env='dev',datastore='DATAWAREHOUSE')
 
 datastores= {
 	'dev':{
-		 'DATAWAREHOUSE'  : {'engine':'postgres', 'host': 'linxdbddwh'     , 'port': '5453', 'database': 'enterpriseDWdev' }
-		,'OLTPSYSTEM'     : {'engine':'postgres', 'host': 'linxdbdoltp'    , 'port': '5453', 'database': 'deoltp'          }
-		,'ETLSTAGING'     : {'engine':'postgres', 'host': 'linxdbdetl'     , 'port': '5453', 'database': 'etl_dev'         }
-		,'CVS'            : {'engine':'postgres', 'host': 'linxdbdpatdev'  , 'port': '5453', 'database': 'dev_cvs'         }
-		,'WALLGREENS'     : {'engine':'postgres', 'host': 'linxdbdpatdev'  , 'port': '5453', 'database': 'wallgreens_test' }
+		 'DATAWAREHOUSE'  : {'engine':'postgres','host': 'localhost', 'port': '5453', 'database': 'enterpriseDWdev'  }
+		,'OLTPSYSTEM'     : {'engine':'postgres','host': 'localhost', 'port': '5453', 'database': 'deoltp'           }
+		,'ETLSTAGING'     : {'engine':'postgres','host': 'localhost', 'port': '5432', 'database': 'postgres'         }
+		,'CVS'            : {'engine':'postgres','host': 'localhost', 'port': '5453', 'database': 'dev_cvs'          }
+		,'WALLGREENS'     : {'engine':'postgres','host': 'localhost', 'port': '5453', 'database': 'wallgreens_test'  }
 	}
-	,'test':{
-		 'DATAWAREHOUSE'  : {'engine':'postgres','host': 'linxdbtdwh'      , 'port': '5453', 'database': 'enterpriseDWtest'}
-		,'OLTPSYSTEM'     : {'engine':'postgres','host': 'linxdbtoltp'     , 'port': '5453', 'database': 'oltptest'        }
-		,'ETLSTAGING'     : {'engine':'postgres','host': 'linxdbdetl'      , 'port': '5453', 'database': 'etl_test'        }
-		,'CVS'            : {'engine':'postgres','host': 'linxdbdpartner'  , 'port': '5453', 'database': 'cvs_test'        }
-		,'WALLGREENS'     : {'engine':'postgres','host': 'linxdbdpartner'  , 'port': '5453', 'database': 'wallgreens_test' }
+	,'local':{
+		 'DATAWAREHOUSE'  : {'engine':'postgres','host': 'localhost', 'port': '5453', 'database': 'enterpriseDWtest' }
+		,'OLTPSYSTEM'     : {'engine':'postgres','host': 'localhost', 'port': '5453', 'database': 'oltptest'         }
+		,'ETLSTAGING'     : {'engine':'postgres','host': 'localhost', 'port': '5432', 'database': 'postgres'         }
+		,'CVS'            : {'engine':'postgres','host': 'localhost', 'port': '5453', 'database': 'cvs_test'         }
+		,'WALLGREENS'     : {'engine':'postgres','host': 'localhost', 'port': '5453', 'database': 'wallgreens_test'  }
 	}
 	,'prod':{
-		 'DATAWAREHOUSE'  : {'engine':'postgres','host': 'linxdbpdwh'      , 'port': '5453', 'database': 'enterpriseDW'    }
-		,'OLTPSYSTEM'     : {'engine':'postgres','host': 'linxdbdoltp'     , 'port': '5453', 'database': 'enterpriseoltp'  }
-		,'ETLSTAGING'     : {'engine':'postgres','host': 'linxdbdetl'      , 'port': '5453', 'database': 'etl_prod'        }
-		,'CVS'            : {'engine':'postgres','host': 'linxdbdptnr'     , 'port': '5453', 'database': 'cvs_prod'        }
-		,'WALLGREENS'     : {'engine':'postgres','host': 'linxdbdptnr'     , 'port': '5453', 'database': 'wallgreens'      }
+		 'DATAWAREHOUSE'  : {'engine':'postgres','host': 'localhost', 'port': '5453', 'database': 'enterpriseDW'     }
+		,'OLTPSYSTEM'     : {'engine':'postgres','host': 'localhost', 'port': '5453', 'database': 'enterpriseoltp'   }
+		,'ETLSTAGING'     : {'engine':'postgres','host': 'localhost', 'port': '5453', 'database': 'etl_prod'         }
+		,'CVS'            : {'engine':'postgres','host': 'localhost', 'port': '5453', 'database': 'cvs_prod'         }
+		,'WALLGREENS'     : {'engine':'postgres','host': 'localhost', 'port': '5453', 'database': 'wallgreens'       }
 	}
 }
+
+ 
+
+
+#test
+if __name__=='__main__':
+	for env,datastores_dict in datastores.items():
+		for datastore,connection in datastores_dict.items():
+			try:
+				db=Datastore.easy_connect(env=env,datastore=datastore)
+				rst=db.execute('select current_database()')
+				print(f'{env}.{datastore}---{rst}')
+			except:
+				print(f'****could not connect to {env}.{datastore}')
+
+
+
+
+
+
+
 

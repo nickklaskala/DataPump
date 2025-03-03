@@ -1,17 +1,17 @@
+#msot
+try:
+	from .msot.msot import msot
+except:
+	print('failed to load msot')
+	pass
 
 #appt_match
 try:
 	from .appointments.appointments import appointments
 except:
-	print('failed to load appointments')
+	print('failed to load appt_match')
 	pass
 
-#fill
-try:
-	from .fill.fill import fill
-except:
-	print('failed to load fill')
-	pass
 
 #other modules
 try:

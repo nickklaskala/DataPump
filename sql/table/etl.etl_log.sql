@@ -1,6 +1,7 @@
 drop table if exists etl.etl_log;
 create table etl.etl_log (
 	 log_id            serial
+	,job_id            int REFERENCES etl.etl_job (job_id) not null
 	,job_name          text not null
 	,file_name         text
 	,status            text CHECK (status in('running','done','reset'))
@@ -11,8 +12,4 @@ create table etl.etl_log (
 	,error_row_count   int
 	,start_date        timestamp not null default now()
 	,end_date          timestamp null 
-	,create_date       timestamp not null default now()
-	,update_date       timestamp not null default now()
-	
 );
-ALTER SEQUENCE etl.etl_log_log_id_seq RESTART WITH 10000;

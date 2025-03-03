@@ -2,5 +2,6 @@ _processing/dev*
 _processing/test*
 _processing/prod*
 _processing/datapump*
+_processing/*
 __pycache__
 .env
