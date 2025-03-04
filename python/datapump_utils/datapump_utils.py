@@ -252,8 +252,8 @@ class MyLogger:
 		for line in msg.split('\n'):
 			self.log_info.error(line)
 			self.log_archive.error(line)
-			self.log_error.error(line)
 			self.log_warning.error(line)
+			self.log_error.error(line)
 
 	def set_status(self, level):
 		levels={'info':1,'warning':2,'error':3}

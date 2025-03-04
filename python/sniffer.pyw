@@ -43,18 +43,23 @@ while True:
 
 	#get scheduled jobs to process
 	db.execute('select etl.etl_forecast_build()')
-	jobs = db.execute('select * from etl.etl_forecast as a left join etl.etl_job as b on b.job_id=a.job_id where a.is_started=false and start_datetime<now()',return_dict=True)
+	jobs = db.execute('select * from etl.etl_forecast as a left join etl.etl_job as b on b.job_id=a.job_id where a.is_started=false and start_datetime<now() order by start_datetime asc',return_dict=True)
 	jobs = [jobs] if isinstance(jobs, dict) else jobs
 
 	print()
 	#launch job
+	launched=[]
 	for job in jobs:
+		if job['job_name'] in launched:
+			continue
+		launched.append(job['job_name'])
 		etl_forecast_id=job['etl_forecast_id']
 		process=getattr(datapump_etl_entry,job['entrypoint'])
 		print('launching job {job_name}'.format(job_name=job['job_name']))
+		jobs = db.execute(f"update etl.etl_forecast set is_started='true' where etl_forecast_id={job['etl_forecast_id']}",return_dict=True)
 		thread=threading.Thread(target=process,args=[job['job_name'],etl_forecast_id])
 		thread.start()
-		time.sleep(2)
+		time.sleep(15)
 
 
 	#go to sleep
